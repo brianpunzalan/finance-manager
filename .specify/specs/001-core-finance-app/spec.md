@@ -11,6 +11,7 @@
 ### Session 2026-05-04
 
 - Q: How should currency be handled — fixed locale, device locale, or user-configurable? → A: Currency is a user-configurable setting in Settings that can be changed at any time.
+- Q: Which default seed categories ship with the app? → A: A richer preset list of ~15 categories covering both expense and income types.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -310,9 +311,16 @@ device is in airplane mode persists after reconnecting.
   money between labels only — no running balance is computed.
 - Transfer transactions are treated as neutral entries (neither income nor expense) and
   are excluded from income/expense category reporting.
-- The app ships with a small set of default categories (e.g., "Food", "Transport",
-  "Salary", "Freelance") and one default account ("General") to ensure the transaction
-  form is usable immediately after install.
+- The app ships with the following preset categories and one default account ("General")
+  so the transaction form is usable immediately after install. All presets are editable
+  and deletable by the user (subject to the fallback rules in FR-012).
+
+  **Expense categories** (type: expense): Food & Drink, Transport, Shopping,
+  Bills & Utilities, Health & Medical, Housing & Rent, Entertainment, Education,
+  Personal Care, Travel.
+
+  **Income categories** (type: income): Salary, Freelance, Business, Investment,
+  Gift & Allowance.
 - No data export, import, or backup feature is in scope for this version.
 - Browser storage quota limits are the effective data cap; no custom quota management
   beyond surfacing a clear error when the limit is reached.
