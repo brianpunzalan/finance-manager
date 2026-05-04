@@ -13,6 +13,7 @@
 - Q: How should currency be handled — fixed locale, device locale, or user-configurable? → A: Currency is a user-configurable setting in Settings that can be changed at any time.
 - Q: Which default seed categories ship with the app? → A: A richer preset list of ~15 categories covering both expense and income types.
 - Q: Should the transaction list support filtering or search? → A: Filter by type (income/expense/transfer), account, category, and date range, plus free-text search on title and note.
+- Constraint (user-specified): All application data MUST be stored in IndexedDB specifically, not localStorage or any other browser storage mechanism.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -212,13 +213,13 @@ device is in airplane mode persists after reconnecting.
 
 ### Edge Cases
 
-- What happens when the user clears browser site data? All locally stored data is
+- What happens when the user clears browser site data? All data stored in IndexedDB is
   permanently lost; the app resets to an empty state with default categories and a
   default account. This is expected behaviour and documented in the UI.
 - What if the user adds a transaction with the same title and time as an existing one?
   Duplicate entries are allowed — deduplication is the user's responsibility.
-- What if the browser's storage quota is exceeded? The app surfaces an error explaining
-  that local storage is full and suggests the user export or delete older entries.
+- What if the browser's IndexedDB quota is exceeded? The app surfaces an error explaining
+  that on-device storage is full and suggests the user delete older entries.
 - How does the app behave when categories or accounts lists are empty? For income/expense,
   the transaction form disables submission and guides the user to Settings to create at
   least one category and one account. For transfers, at least two accounts are required.
@@ -260,8 +261,9 @@ device is in airplane mode persists after reconnecting.
 - **FR-013**: Deleting an account MUST reassign all affected transactions — including
   transfers where it appeared as source or destination — to the "General" system fallback;
   the fallback MUST NOT be deletable.
-- **FR-014**: All data MUST be stored entirely within the user's browser; no financial
-  data is ever transmitted over a network.
+- **FR-014**: All application data MUST be stored in IndexedDB within the user's browser.
+  No other client-side storage mechanism (localStorage, sessionStorage, cookies) is
+  permitted for financial data, and no financial data is ever transmitted over a network.
 - **FR-015**: Application MUST be accessible without any login, registration, or
   authentication step.
 - **FR-016**: Application MUST be installable as a PWA on supported browsers.
@@ -340,7 +342,8 @@ device is in airplane mode persists after reconnecting.
   **Income categories** (type: income): Salary, Freelance, Business, Investment,
   Gift & Allowance.
 - No data export, import, or backup feature is in scope for this version.
-- Browser storage quota limits are the effective data cap; no custom quota management
-  beyond surfacing a clear error when the limit is reached.
+- IndexedDB is the mandated storage mechanism. Browser-imposed IndexedDB quota limits
+  are the effective data cap; no custom quota management beyond surfacing a clear error
+  when the limit is reached.
 - Date/time is stored and displayed in the user's local timezone as reported by the
   browser.
