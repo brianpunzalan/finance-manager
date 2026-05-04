@@ -1,11 +1,15 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (none) → 1.0.0
-Added sections: Core Principles (I–V), Architecture Constraints, Governance
-Removed sections: N/A (initial ratification)
+Version change: 1.0.0 → 2.0.0
+Modified principles:
+  - Removed: III. Test-First (NON-NEGOTIABLE) — automated tests are not required by this project
+  - Renamed: IV. Security & Privacy by Default → III. Security & Privacy by Default
+  - Renamed: V. Simplicity over Cleverness → IV. Simplicity over Cleverness
+  - Added: V. Accessibility (WAI-ARIA Compliance)
+Governance gates updated: Gate 3 (Test-First) removed; Gate 5 added (Accessibility)
 Templates checked:
-  ✅ .specify/templates/plan-template.md — Constitution Check gates derived from principles below
+  ✅ .specify/templates/plan-template.md — Constitution Check gates updated (Gate 3 removed, Gate 5 added)
   ✅ .specify/templates/spec-template.md — no structural changes required
   ✅ .specify/templates/tasks-template.md — no structural changes required
 Deferred items: None
@@ -35,17 +39,7 @@ financial records MUST take precedence over convenience, performance, or develop
 - No silent data loss is permitted under any failure mode; errors MUST surface explicitly.
 - Data migrations MUST be reversible or have a documented, tested rollback path.
 
-### III. Test-First (NON-NEGOTIABLE)
-
-TDD is mandatory: tests are written, reviewed, and confirmed failing before any
-implementation code is produced. Red → Green → Refactor strictly enforced.
-
-- Acceptance scenarios in `spec.md` translate directly to automated tests.
-- A feature is not complete until its acceptance tests pass.
-- Skipping tests requires explicit written justification in the spec; "time pressure" is not
-  a valid reason.
-
-### IV. Security & Privacy by Default
+### III. Security & Privacy by Default
 
 Financial data is sensitive. Protective measures are not optional add-ons.
 
@@ -55,7 +49,7 @@ Financial data is sensitive. Protective measures are not optional add-ons.
 - Input from users or external systems MUST be validated at system boundaries before use.
 - Dependencies MUST be reviewed for known CVEs before introduction.
 
-### V. Simplicity over Cleverness
+### IV. Simplicity over Cleverness
 
 Finance logic is complex enough on its own; the codebase MUST not add unnecessary complexity.
 
@@ -65,10 +59,26 @@ Finance logic is complex enough on its own; the codebase MUST not add unnecessar
 - Complexity that violates this principle MUST be justified in the plan's Complexity
   Tracking table before implementation.
 
+### V. Accessibility (WAI-ARIA Compliance)
+
+All UI components MUST be usable by people relying on assistive technologies. Accessibility
+is a first-class requirement, not a post-implementation audit item.
+
+- Every interactive component MUST carry correct ARIA roles, states, and properties
+  (e.g., `role`, `aria-label`, `aria-expanded`, `aria-live` where applicable).
+- Keyboard navigation MUST be fully functional without a pointing device.
+- Focus order MUST follow a logical reading sequence; focus MUST never be trapped
+  unintentionally.
+- Dynamic content changes (e.g., balance updates, alerts) MUST use appropriate
+  `aria-live` regions so screen readers announce them.
+- Minimum contrast ratio: 4.5:1 for normal text, 3:1 for large text (WCAG 2.1 AA).
+- Accessibility MUST be verified during plan review (Constitution Check Gate 5) and
+  again at implementation completion.
+
 ## Architecture Constraints
 
 - **Tech stack** is decided per-feature in `plan.md`, not in the constitution.
-  However, all stack choices MUST be justified against Principles II and V.
+  However, all stack choices MUST be justified against Principles II and IV.
 - **No shared mutable global state** in business logic; side effects are explicit.
 - **API contracts** (in `contracts/`) are the boundary between components; they MUST
   be versioned and backward-compatible within a major version.
@@ -82,8 +92,8 @@ Finance logic is complex enough on its own; the codebase MUST not add unnecessar
 - Constitution Check in `plan-template.md` gates are derived from Principles I–V:
   - Gate 1 (Spec-as-Source): approved `spec.md` exists for this feature.
   - Gate 2 (Data Integrity): mutations are atomic; rollback path documented.
-  - Gate 3 (Test-First): acceptance tests written and failing before implementation starts.
-  - Gate 4 (Security): data scoping verified; no secrets in code; inputs validated.
-  - Gate 5 (Simplicity): Complexity Tracking table completed for any principle violation.
+  - Gate 3 (Security): data scoping verified; no secrets in code; inputs validated.
+  - Gate 4 (Simplicity): Complexity Tracking table completed for any principle violation.
+  - Gate 5 (Accessibility): ARIA roles/states specified in plan; keyboard nav documented.
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04
+**Version**: 2.0.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04
