@@ -1,14 +1,12 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 2.0.0 → 2.1.0
+Version change: 2.1.0 → 2.2.0
 Modified principles:
-  - Added: VI. Offline-First
-  - Added: VII. PWA Installability
-Governance gates updated: Gate 6 (Offline) and Gate 7 (PWA) added
-Architecture Constraints updated: offline-readiness note added
+  - Added: VIII. Continuous Deployment via GitHub Pages
+Governance gates updated: Gate 8 (CD) added
 Templates checked:
-  ✅ .specify/templates/plan-template.md — Constitution Check gates updated (Gate 6, Gate 7 added)
+  ✅ .specify/templates/plan-template.md — Constitution Check gates updated (Gate 8 added)
   ✅ .specify/templates/spec-template.md — no structural changes required
   ✅ .specify/templates/tasks-template.md — no structural changes required
 Deferred items: None
@@ -106,10 +104,29 @@ to their home screen or desktop and run it in a standalone window.
   appear on every page load.
 - Lighthouse PWA audit score MUST be 100 before a feature is considered shippable.
 
+### VIII. Continuous Deployment via GitHub Pages
+
+Every merge to `main` MUST automatically build and deploy the application to GitHub Pages.
+Shipping is not a manual step.
+
+- A GitHub Actions workflow MUST build the production bundle and push it to the `gh-pages`
+  branch (or publish from `docs/` if configured) on every push to `main`.
+- The build MUST be a fully static output (HTML + JS + CSS + assets) — no server-side
+  runtime is permitted on GitHub Pages.
+- All environment-specific values (API URLs, feature flags) MUST be injected at build
+  time via environment variables or a build-time config file; no runtime secrets are
+  allowed in the deployed bundle.
+- The deployment pipeline MUST fail fast: if the build step errors, the deploy step
+  MUST NOT run.
+- A canonical production URL (`https://<org>.github.io/<repo>/`) MUST be documented
+  in `README.md` and kept current.
+- `base` path configuration (e.g., Vite's `base` option) MUST account for the
+  GitHub Pages sub-path so all assets and routes resolve correctly.
+
 ## Architecture Constraints
 
 - **Tech stack** is decided per-feature in `plan.md`, not in the constitution.
-  However, all stack choices MUST be justified against Principles II, IV, VI, and VII.
+  However, all stack choices MUST be justified against Principles II, IV, VI, VII, and VIII.
 - **No shared mutable global state** in business logic; side effects are explicit.
 - **API contracts** (in `contracts/`) are the boundary between components; they MUST
   be versioned and backward-compatible within a major version.
@@ -122,8 +139,8 @@ to their home screen or desktop and run it in a standalone window.
 - This constitution supersedes all other development guidelines when conflicts arise.
 - Amendments require: documented rationale, updated version number, and a migration note
   for any existing specs or plans affected.
-- All spec and plan reviews MUST verify compliance with Principles I–VII before approval.
-- Constitution Check in `plan-template.md` gates are derived from Principles I–VII:
+- All spec and plan reviews MUST verify compliance with Principles I–VIII before approval.
+- Constitution Check in `plan-template.md` gates are derived from Principles I–VIII:
   - Gate 1 (Spec-as-Source): approved `spec.md` exists for this feature.
   - Gate 2 (Data Integrity): mutations are atomic; rollback path documented.
   - Gate 3 (Security): data scoping verified; no secrets in code; inputs validated.
@@ -133,5 +150,7 @@ to their home screen or desktop and run it in a standalone window.
     in spec before plan approval.
   - Gate 7 (PWA): manifest, service worker strategy, and Lighthouse target documented
     in plan before implementation starts.
+  - Gate 8 (CD): GitHub Actions workflow for GitHub Pages deployment exists or is
+    planned in this feature; static-only output confirmed; `base` path configured.
 
-**Version**: 2.1.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04
+**Version**: 2.2.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04
