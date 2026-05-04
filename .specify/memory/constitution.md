@@ -1,12 +1,13 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 2.1.0 → 2.2.0
+Version change: 2.2.0 → 2.3.0
 Modified principles:
-  - Added: VIII. Continuous Deployment via GitHub Pages
-Governance gates updated: Gate 8 (CD) added
+  - Added: IX. Data Compatibility & Schema Stability
+Governance gates updated: Gate 9 (Schema Compatibility) added
+Architecture Constraints updated: user-initiated export clarification; IndexedDB specified
 Templates checked:
-  ✅ .specify/templates/plan-template.md — Constitution Check gates updated (Gate 8 added)
+  ✅ .specify/templates/plan-template.md — Constitution Check gates updated (Gate 9 added)
   ✅ .specify/templates/spec-template.md — no structural changes required
   ✅ .specify/templates/tasks-template.md — no structural changes required
 Deferred items: None
@@ -123,24 +124,45 @@ Shipping is not a manual step.
 - `base` path configuration (e.g., Vite's `base` option) MUST account for the
   GitHub Pages sub-path so all assets and routes resolve correctly.
 
+### IX. Data Compatibility & Schema Stability
+
+The IndexedDB schema is a public contract with every user's stored data. Breaking it
+silently destroys data that has no server backup.
+
+- All IndexedDB schema changes MUST be additive and non-breaking: new fields MUST have
+  defaults; existing fields MUST NOT be renamed or removed without a versioned migration
+  that preserves all previously written records.
+- Backward compatibility: every version of the app MUST be able to read data written by
+  any older version.
+- Forward compatibility: older app versions encountering unknown fields written by a
+  newer version MUST ignore those fields rather than error.
+- A monotonically increasing schema version number MUST be stored in IndexedDB and
+  checked on every app open; version mismatches trigger the migration path, never a
+  silent reset.
+- All writes to IndexedDB MUST use transactions so that partial writes are impossible;
+  if a transaction fails it MUST be rolled back in full and the error surfaced to the user.
+
 ## Architecture Constraints
 
 - **Tech stack** is decided per-feature in `plan.md`, not in the constitution.
-  However, all stack choices MUST be justified against Principles II, IV, VI, VII, and VIII.
+  However, all stack choices MUST be justified against Principles II, IV, VI, VII, VIII,
+  and IX.
 - **No shared mutable global state** in business logic; side effects are explicit.
 - **API contracts** (in `contracts/`) are the boundary between components; they MUST
   be versioned and backward-compatible within a major version.
-- **Local-first data layer**: the canonical data store during a session is the local
-  database (IndexedDB or equivalent); any remote backend is a sync target, not the
-  source of truth for reads.
+- **Local-first data layer**: IndexedDB is the sole data store; no other client-side
+  storage mechanism (localStorage, sessionStorage, cookies) may hold financial data.
+- **User-initiated export is permitted**: financial data MAY leave the device only when
+  the user explicitly triggers an export action. Automatic background transmission of
+  financial data to any third-party service is prohibited.
 
 ## Governance
 
 - This constitution supersedes all other development guidelines when conflicts arise.
 - Amendments require: documented rationale, updated version number, and a migration note
   for any existing specs or plans affected.
-- All spec and plan reviews MUST verify compliance with Principles I–VIII before approval.
-- Constitution Check in `plan-template.md` gates are derived from Principles I–VIII:
+- All spec and plan reviews MUST verify compliance with Principles I–IX before approval.
+- Constitution Check in `plan-template.md` gates are derived from Principles I–IX:
   - Gate 1 (Spec-as-Source): approved `spec.md` exists for this feature.
   - Gate 2 (Data Integrity): mutations are atomic; rollback path documented.
   - Gate 3 (Security): data scoping verified; no secrets in code; inputs validated.
@@ -152,5 +174,7 @@ Shipping is not a manual step.
     in plan before implementation starts.
   - Gate 8 (CD): GitHub Actions workflow for GitHub Pages deployment exists or is
     planned in this feature; static-only output confirmed; `base` path configured.
+  - Gate 9 (Schema Stability): schema version tracked; all changes are additive;
+    migration path documented for any schema change; all writes use transactions.
 
-**Version**: 2.2.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04
+**Version**: 2.3.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04

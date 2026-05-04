@@ -14,6 +14,9 @@
 - Q: Which default seed categories ship with the app? → A: A richer preset list of ~15 categories covering both expense and income types.
 - Q: Should the transaction list support filtering or search? → A: Filter by type (income/expense/transfer), account, category, and date range, plus free-text search on title and note.
 - Constraint (user-specified): All application data MUST be stored in IndexedDB specifically, not localStorage or any other browser storage mechanism.
+- Q: How should the app handle corrupt/unreadable IndexedDB data on load? → A: Show a clear error screen, block all further writes, and guide the user to restore from a backup file. Only if no backup exists, offer a "Start fresh" option behind an explicit double-confirmation. No silent reset.
+- Q: How should partial writes be prevented? → A: All IndexedDB mutations MUST use transactions; if a transaction fails it MUST roll back in full and surface an error.
+- Q: How should iOS storage eviction be mitigated? → A: Request persistent storage permission (`navigator.storage.persist()`) on first launch. If granted, storage is protected. If denied or unavailable, show a persistent notice warning the user and recommending PWA installation for stronger storage guarantees.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -211,6 +214,56 @@ device is in airplane mode persists after reconnecting.
 
 ---
 
+### User Story 6 — Export, Backup & Restore (Priority: P6)
+
+A user can export all their financial data as a CSV file, either on demand or on a
+recurring schedule. Ad-hoc exports may be saved locally (browser download) or sent to
+the user's Google Drive. Scheduled exports are sent automatically to Google Drive at a
+configured interval. The user may restore their data at any time by importing a
+previously exported CSV backup file.
+
+**Why this priority**: Export and restore protect against data loss from browser
+eviction, storage corruption, or accidental deletion. Required as the sole recovery
+mechanism given the app has no server backup.
+
+**Independent Test**: Can be fully tested by exporting data to a local download, clearing
+all app data, then restoring from the downloaded file and confirming all original records
+are present.
+
+**Acceptance Scenarios**:
+
+1. **Given** the user is in Settings → Backup & Export, **When** they choose "Export now"
+   and select "Download to device", **Then** a CSV file is downloaded via the browser
+   containing all transactions, categories, and accounts in the agreed schema.
+
+2. **Given** the user is in Settings → Backup & Export, **When** they choose "Export now"
+   and select "Save to Google Drive", **Then** the app requests Google Drive authorisation
+   (if not already granted), and saves the CSV file to the user's Drive in a designated
+   app folder.
+
+3. **Given** the user has configured a scheduled backup, **When** the app is opened and
+   the scheduled interval has elapsed, **Then** the app automatically exports a CSV to
+   Google Drive and notifies the user that a backup was saved.
+
+4. **Given** the user is in Settings → Backup & Export and chooses "Restore from backup",
+   **When** they select a valid CSV backup file, **Then** the app presents a confirmation
+   screen showing the record count to be restored and warns that existing data will be
+   replaced, before proceeding.
+
+5. **Given** a restore operation is confirmed, **When** the import completes successfully,
+   **Then** all transactions, categories, and accounts from the backup file are present
+   in the app and the previous data is gone.
+
+6. **Given** the app detects corrupt or unreadable IndexedDB data on load, **When** the
+   error screen is shown, **Then** a prominent "Restore from backup" action is available;
+   if no backup exists, a "Start fresh" action is offered behind a double-confirmation.
+
+7. **Given** a backup CSV file with an unrecognised or invalid format is selected,
+   **When** the user attempts to restore, **Then** the app rejects the file with a clear
+   error message and leaves existing data untouched.
+
+---
+
 ### Edge Cases
 
 - What happens when the user clears browser site data? All data stored in IndexedDB is
@@ -219,7 +272,8 @@ device is in airplane mode persists after reconnecting.
 - What if the user adds a transaction with the same title and time as an existing one?
   Duplicate entries are allowed — deduplication is the user's responsibility.
 - What if the browser's IndexedDB quota is exceeded? The app surfaces an error explaining
-  that on-device storage is full and suggests the user delete older entries.
+  that on-device storage is full and suggests the user delete older entries or export
+  a backup.
 - How does the app behave when categories or accounts lists are empty? For income/expense,
   the transaction form disables submission and guides the user to Settings to create at
   least one category and one account. For transfers, at least two accounts are required.
@@ -228,6 +282,20 @@ device is in airplane mode persists after reconnecting.
 - What if an account involved in a transfer is deleted? The transfer is reassigned to
   the "General" fallback for the affected side (source or destination), preserving the
   transaction record.
+- What if IndexedDB data is corrupt or unreadable on app load (e.g., schema mismatch
+  after an update, interrupted write, or browser-level corruption)? The app shows a
+  clear error screen, blocks all further writes to prevent overwriting salvageable data,
+  and guides the user to restore from a backup file. If no backup exists, a "Start fresh"
+  option is available behind an explicit double-confirmation warning.
+- What if an IndexedDB write transaction fails mid-operation? The transaction is rolled
+  back in full; no partial data is committed. The error is surfaced to the user
+  immediately with a prompt to retry.
+- What if the OS evicts IndexedDB data under storage pressure (particularly on iOS
+  Safari)? On first launch the app requests persistent storage permission via the
+  Storage Persistence API. If granted, eviction is prevented. If denied or the API is
+  unavailable, the app displays a persistent notice warning the user that data may be at
+  risk and recommending PWA installation ("Add to Home Screen"), which provides stronger
+  storage durability guarantees on iOS.
 
 ## Requirements *(mandatory)*
 
@@ -279,6 +347,36 @@ device is in airplane mode persists after reconnecting.
 - **FR-021**: Settings MUST include a currency selector. The user MUST be able to change
   the active currency at any time. Changing the currency updates all displayed amounts
   immediately; stored decimal values are not altered.
+- **FR-022**: All IndexedDB write operations MUST be wrapped in transactions. If a
+  transaction fails for any reason, it MUST roll back completely; no partial state is
+  persisted. The error MUST be surfaced to the user with a retry prompt.
+- **FR-023**: The app MUST track an internal schema version number in IndexedDB. On
+  every launch it MUST compare the stored version to the current app version and run
+  any required additive migrations before allowing data access. Schema changes MUST
+  never remove or rename existing fields without a migration that preserves all
+  previously written records.
+- **FR-024**: On first launch, the app MUST request persistent storage permission via
+  the browser's Storage Persistence API. If permission is denied or the API is
+  unavailable, the app MUST display a persistent notice warning the user that data may
+  be at risk and recommending PWA installation.
+- **FR-025**: If IndexedDB is unreadable or throws on open, the app MUST display an
+  error screen, block all further write operations, and offer a "Restore from backup"
+  action as the primary recovery path. A "Start fresh" action MUST be available as a
+  last resort only after the user passes an explicit double-confirmation warning.
+- **FR-026**: Settings MUST include a Backup & Export section providing:
+  (a) Ad-hoc export to local device download (CSV).
+  (b) Ad-hoc export to the user's Google Drive (CSV), requiring Google OAuth
+      authorisation on first use.
+  (c) Scheduled automatic export to Google Drive at a user-configured interval
+      (daily, weekly, or monthly); the export triggers when the app is opened and
+      the interval has elapsed.
+- **FR-027**: The CSV export format MUST include all transactions, categories, and
+  accounts. The exact schema will be defined at the plan stage.
+- **FR-028**: Settings MUST include a "Restore from backup" action that accepts a
+  previously exported CSV file. Before restoring, the app MUST display a confirmation
+  screen showing the record count and a warning that existing data will be replaced.
+  On confirmation, existing data is replaced atomically. If the file is invalid or
+  unrecognised, the restore is rejected and existing data is left untouched.
 
 ### Key Entities
 
@@ -317,6 +415,10 @@ device is in airplane mode persists after reconnecting.
   are reflected in the transaction form without requiring a page reload.
 - **SC-007**: All interactive elements are operable by keyboard alone and are
   announced correctly by a screen reader.
+- **SC-008**: A user can export all data to a local CSV download in under 10 seconds
+  regardless of the number of transactions stored.
+- **SC-009**: A user can fully restore all data from a valid CSV backup file, with the
+  restored record count matching the export, in a single operation.
 
 ## Assumptions
 
@@ -341,7 +443,11 @@ device is in airplane mode persists after reconnecting.
 
   **Income categories** (type: income): Salary, Freelance, Business, Investment,
   Gift & Allowance.
-- No data export, import, or backup feature is in scope for this version.
+- Export and restore are in scope. Financial data MAY leave the device only via an
+  explicit user-initiated export action (local download or Google Drive). Automatic
+  background transmission is prohibited. Google Drive integration requires OAuth
+  authorisation granted by the user; no financial data is stored server-side by this
+  app. The CSV schema will be finalised at the plan stage.
 - IndexedDB is the mandated storage mechanism. Browser-imposed IndexedDB quota limits
   are the effective data cap; no custom quota management beyond surfacing a clear error
   when the limit is reached.
