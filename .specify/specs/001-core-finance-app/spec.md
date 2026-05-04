@@ -6,6 +6,12 @@
 **Status**: Draft
 **Input**: User description: public, offline-first, PWA-installable personal finance journaling app with income/expense/transfer transactions, configurable categories and accounts, no authentication required.
 
+## Clarifications
+
+### Session 2026-05-04
+
+- Q: How should currency be handled — fixed locale, device locale, or user-configurable? → A: Currency is a user-configurable setting in Settings that can be changed at any time.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Record a Financial Transaction (Priority: P1)
@@ -249,6 +255,9 @@ device is in airplane mode persists after reconnecting.
 - **FR-017**: All features MUST work fully when the device has no network connection.
 - **FR-018**: All interactive UI components MUST comply with WAI-ARIA standards,
   support keyboard navigation, and meet WCAG 2.1 AA contrast requirements.
+- **FR-019**: Settings MUST include a currency selector. The user MUST be able to change
+  the active currency at any time. Changing the currency updates all displayed amounts
+  immediately; stored decimal values are not altered.
 
 ### Key Entities
 
@@ -292,7 +301,10 @@ device is in airplane mode persists after reconnecting.
 
 - Single-user application; no data sharing, sync to cloud, or multi-device support
   in this version.
-- A single currency is used throughout; no multi-currency or currency conversion.
+- A single active currency is used throughout the app at any one time; no multi-currency
+  or currency conversion. The user selects their currency in Settings and may change it
+  at any time. All amounts are stored as plain decimals; the selected currency symbol and
+  format are applied at display time only.
 - "Account" in this version is a named label only (e.g., "Cash", "Savings"); there
   is no balance tracking, opening balance, or reconciliation feature. Transfers move
   money between labels only — no running balance is computed.
