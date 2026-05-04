@@ -1,15 +1,14 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 → 2.0.0
+Version change: 2.0.0 → 2.1.0
 Modified principles:
-  - Removed: III. Test-First (NON-NEGOTIABLE) — automated tests are not required by this project
-  - Renamed: IV. Security & Privacy by Default → III. Security & Privacy by Default
-  - Renamed: V. Simplicity over Cleverness → IV. Simplicity over Cleverness
-  - Added: V. Accessibility (WAI-ARIA Compliance)
-Governance gates updated: Gate 3 (Test-First) removed; Gate 5 added (Accessibility)
+  - Added: VI. Offline-First
+  - Added: VII. PWA Installability
+Governance gates updated: Gate 6 (Offline) and Gate 7 (PWA) added
+Architecture Constraints updated: offline-readiness note added
 Templates checked:
-  ✅ .specify/templates/plan-template.md — Constitution Check gates updated (Gate 3 removed, Gate 5 added)
+  ✅ .specify/templates/plan-template.md — Constitution Check gates updated (Gate 6, Gate 7 added)
   ✅ .specify/templates/spec-template.md — no structural changes required
   ✅ .specify/templates/tasks-template.md — no structural changes required
 Deferred items: None
@@ -75,25 +74,64 @@ is a first-class requirement, not a post-implementation audit item.
 - Accessibility MUST be verified during plan review (Constitution Check Gate 5) and
   again at implementation completion.
 
+### VI. Offline-First
+
+The application MUST remain fully functional without a network connection. Connectivity
+is a progressive enhancement, not a prerequisite.
+
+- All core financial operations (create, read, update, delete transactions, view budgets
+  and balances) MUST work entirely offline using local storage.
+- Every feature spec MUST document its offline behaviour and conflict-resolution strategy
+  before a plan is approved.
+- Data written offline MUST be durably persisted locally (e.g., IndexedDB or equivalent)
+  so it survives page reloads and browser restarts.
+- When connectivity is restored, local changes MUST sync to any remote backend without
+  data loss; sync conflicts MUST be resolved deterministically and surfaced to the user
+  when ambiguous.
+- UI MUST clearly indicate the current connectivity state and the sync status of
+  pending local changes.
+
+### VII. PWA Installability
+
+The application MUST meet the browser's PWA installability criteria so users can add it
+to their home screen or desktop and run it in a standalone window.
+
+- A valid Web App Manifest (`manifest.json`) MUST be present with at minimum: `name`,
+  `short_name`, `start_url`, `display: standalone`, `background_color`, `theme_color`,
+  and at least one maskable icon at 512×512.
+- A Service Worker MUST be registered and MUST implement a cache-first strategy for all
+  app shell assets and a network-first (falling back to cache) strategy for API calls.
+- The application MUST be served over HTTPS (or localhost for development).
+- The install prompt MUST be surfaced in-app at an appropriate moment; it MUST NOT
+  appear on every page load.
+- Lighthouse PWA audit score MUST be 100 before a feature is considered shippable.
+
 ## Architecture Constraints
 
 - **Tech stack** is decided per-feature in `plan.md`, not in the constitution.
-  However, all stack choices MUST be justified against Principles II and IV.
+  However, all stack choices MUST be justified against Principles II, IV, VI, and VII.
 - **No shared mutable global state** in business logic; side effects are explicit.
 - **API contracts** (in `contracts/`) are the boundary between components; they MUST
   be versioned and backward-compatible within a major version.
+- **Local-first data layer**: the canonical data store during a session is the local
+  database (IndexedDB or equivalent); any remote backend is a sync target, not the
+  source of truth for reads.
 
 ## Governance
 
 - This constitution supersedes all other development guidelines when conflicts arise.
 - Amendments require: documented rationale, updated version number, and a migration note
   for any existing specs or plans affected.
-- All spec and plan reviews MUST verify compliance with Principles I–V before approval.
-- Constitution Check in `plan-template.md` gates are derived from Principles I–V:
+- All spec and plan reviews MUST verify compliance with Principles I–VII before approval.
+- Constitution Check in `plan-template.md` gates are derived from Principles I–VII:
   - Gate 1 (Spec-as-Source): approved `spec.md` exists for this feature.
   - Gate 2 (Data Integrity): mutations are atomic; rollback path documented.
   - Gate 3 (Security): data scoping verified; no secrets in code; inputs validated.
   - Gate 4 (Simplicity): Complexity Tracking table completed for any principle violation.
   - Gate 5 (Accessibility): ARIA roles/states specified in plan; keyboard nav documented.
+  - Gate 6 (Offline-First): offline behaviour and conflict-resolution strategy documented
+    in spec before plan approval.
+  - Gate 7 (PWA): manifest, service worker strategy, and Lighthouse target documented
+    in plan before implementation starts.
 
-**Version**: 2.0.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04
+**Version**: 2.1.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04
