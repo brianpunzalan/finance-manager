@@ -1,50 +1,89 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT
+==================
+Version change: (none) → 1.0.0
+Added sections: Core Principles (I–V), Architecture Constraints, Governance
+Removed sections: N/A (initial ratification)
+Templates checked:
+  ✅ .specify/templates/plan-template.md — Constitution Check gates derived from principles below
+  ✅ .specify/templates/spec-template.md — no structural changes required
+  ✅ .specify/templates/tasks-template.md — no structural changes required
+Deferred items: None
+-->
+
+# Finance Manager Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Spec-as-Source (NON-NEGOTIABLE)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+No feature is designed, planned, or coded without an approved spec in `.specify/specs/`.
+The specification is the authoritative definition of intent. Implementation MUST match
+the spec; if reality diverges, the spec is amended first, not worked around.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- Every feature begins with `/speckit-specify` and requires an approved `spec.md` before
+  `/speckit-plan` runs.
+- Code that has no corresponding spec entry MUST NOT be merged.
+- Amendments to requirements go through spec revision, not ad-hoc code changes.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Data Integrity First
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+Financial data is the core asset of this application. Correctness and durability of
+financial records MUST take precedence over convenience, performance, or development speed.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+- All mutations to financial records (transactions, balances, budgets) MUST be atomic.
+- No silent data loss is permitted under any failure mode; errors MUST surface explicitly.
+- Data migrations MUST be reversible or have a documented, tested rollback path.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Test-First (NON-NEGOTIABLE)
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+TDD is mandatory: tests are written, reviewed, and confirmed failing before any
+implementation code is produced. Red → Green → Refactor strictly enforced.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Acceptance scenarios in `spec.md` translate directly to automated tests.
+- A feature is not complete until its acceptance tests pass.
+- Skipping tests requires explicit written justification in the spec; "time pressure" is not
+  a valid reason.
+
+### IV. Security & Privacy by Default
+
+Financial data is sensitive. Protective measures are not optional add-ons.
+
+- All user financial data MUST be scoped to the owning user; cross-user data access is
+  a critical bug.
+- Credentials, tokens, and secrets MUST never be committed to the repository.
+- Input from users or external systems MUST be validated at system boundaries before use.
+- Dependencies MUST be reviewed for known CVEs before introduction.
+
+### V. Simplicity over Cleverness
+
+Finance logic is complex enough on its own; the codebase MUST not add unnecessary complexity.
+
+- YAGNI: build only what the current spec requires.
+- Prefer standard library and well-established dependencies over custom implementations.
+- Three similar lines is preferable to a premature abstraction.
+- Complexity that violates this principle MUST be justified in the plan's Complexity
+  Tracking table before implementation.
+
+## Architecture Constraints
+
+- **Tech stack** is decided per-feature in `plan.md`, not in the constitution.
+  However, all stack choices MUST be justified against Principles II and V.
+- **No shared mutable global state** in business logic; side effects are explicit.
+- **API contracts** (in `contracts/`) are the boundary between components; they MUST
+  be versioned and backward-compatible within a major version.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution supersedes all other development guidelines when conflicts arise.
+- Amendments require: documented rationale, updated version number, and a migration note
+  for any existing specs or plans affected.
+- All spec and plan reviews MUST verify compliance with Principles I–V before approval.
+- Constitution Check in `plan-template.md` gates are derived from Principles I–V:
+  - Gate 1 (Spec-as-Source): approved `spec.md` exists for this feature.
+  - Gate 2 (Data Integrity): mutations are atomic; rollback path documented.
+  - Gate 3 (Test-First): acceptance tests written and failing before implementation starts.
+  - Gate 4 (Security): data scoping verified; no secrets in code; inputs validated.
+  - Gate 5 (Simplicity): Complexity Tracking table completed for any principle violation.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04
