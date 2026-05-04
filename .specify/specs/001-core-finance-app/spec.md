@@ -12,6 +12,7 @@
 
 - Q: How should currency be handled — fixed locale, device locale, or user-configurable? → A: Currency is a user-configurable setting in Settings that can be changed at any time.
 - Q: Which default seed categories ship with the app? → A: A richer preset list of ~15 categories covering both expense and income types.
+- Q: Should the transaction list support filtering or search? → A: Filter by type (income/expense/transfer), account, category, and date range, plus free-text search on title and note.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -102,6 +103,17 @@ have transactions to act on.
 
 5. **Given** no transactions exist, **When** the user views the transaction list,
    **Then** an empty-state message guides them to record their first transaction.
+
+6. **Given** the transaction list is visible, **When** the user applies one or more
+   filters (type, account, category, date range) or enters text in the search field,
+   **Then** the list updates immediately to show only matching entries.
+
+7. **Given** filters or search are active, **When** no transactions match, **Then** a
+   clear empty-state message indicates no results for the current filters, with an
+   option to clear them.
+
+8. **Given** filters or search are active, **When** the user clears all filters,
+   **Then** the full transaction list is restored.
 
 ---
 
@@ -256,7 +268,13 @@ device is in airplane mode persists after reconnecting.
 - **FR-017**: All features MUST work fully when the device has no network connection.
 - **FR-018**: All interactive UI components MUST comply with WAI-ARIA standards,
   support keyboard navigation, and meet WCAG 2.1 AA contrast requirements.
-- **FR-019**: Settings MUST include a currency selector. The user MUST be able to change
+- **FR-019**: The transaction list MUST support filtering by any combination of:
+  transaction type (income, expense, transfer), account, category, and date range.
+  Filters MUST be combinable (AND logic). A clear-all-filters control MUST be present
+  when any filter is active.
+- **FR-020**: The transaction list MUST support free-text search across the title and
+  note fields. Search MUST be case-insensitive and update results as the user types.
+- **FR-021**: Settings MUST include a currency selector. The user MUST be able to change
   the active currency at any time. Changing the currency updates all displayed amounts
   immediately; stored decimal values are not altered.
 
