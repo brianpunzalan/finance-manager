@@ -17,6 +17,8 @@
 - Q: How should the app handle corrupt/unreadable IndexedDB data on load? → A: Show a clear error screen, block all further writes, and guide the user to restore from a backup file. Only if no backup exists, offer a "Start fresh" option behind an explicit double-confirmation. No silent reset.
 - Q: How should partial writes be prevented? → A: All IndexedDB mutations MUST use transactions; if a transaction fails it MUST roll back in full and surface an error.
 - Q: How should iOS storage eviction be mitigated? → A: Request persistent storage permission (`navigator.storage.persist()`) on first launch. If granted, storage is protected. If denied or unavailable, show a persistent notice warning the user and recommending PWA installation for stronger storage guarantees.
+- Q: When does the scheduled export trigger, and which mechanism? → A: Trigger on app open when the interval has elapsed and show a non-blocking toast confirming the backup ran. Additionally, attempt Periodic Background Sync API on Chrome installations that support it, falling back to on-open trigger otherwise.
+- Scope constraint (user-specified): The application targets Chrome (desktop and Android) only. All other browsers MUST receive an unsupported-browser error page. PWA installability MUST work on Android Chrome specifically.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -184,31 +186,37 @@ form updates accordingly.
 
 ### User Story 5 — Install and Use Offline as PWA (Priority: P5)
 
-A user on a supported mobile or desktop browser is prompted to install the app to their
-home screen or desktop. Once installed, the app opens in a standalone window and all
-core features work without an internet connection.
+A user on Chrome (desktop or Android) is prompted to install the app to their home
+screen or desktop. Once installed, the app opens in a standalone window and all core
+features work without an internet connection. Users on any other browser see a clear
+unsupported-browser page.
 
 **Why this priority**: Offline use and installability are constitutional requirements
 but are experienced as a layer on top of the already-working journaling features.
+Chrome-only scope simplifies PWA delivery significantly.
 
-**Independent Test**: Can be fully tested by installing via the browser's install prompt
-and confirming the app launches standalone, and that adding a transaction while the
-device is in airplane mode persists after reconnecting.
+**Independent Test**: Can be fully tested on Android Chrome by installing via the
+browser install prompt, confirming the app launches standalone, and recording a
+transaction in airplane mode.
 
 **Acceptance Scenarios**:
 
-1. **Given** the user visits the app in a PWA-capable browser for the first time,
-   **When** the browser determines the install criteria are met, **Then** an in-app
-   install prompt appears at an appropriate moment (not on every page load).
+1. **Given** a user opens the app in a browser other than Chrome, **When** the app
+   loads, **Then** an unsupported-browser error page is displayed explaining that only
+   Chrome (desktop and Android) is supported, with no app functionality accessible.
 
-2. **Given** the app is installed, **When** the user launches it from their home screen
-   or desktop, **Then** it opens in a standalone window with no browser chrome.
+2. **Given** the user visits the app in Chrome for the first time, **When** the browser
+   determines the PWA install criteria are met, **Then** an in-app install prompt
+   appears at an appropriate moment (not on every page load).
 
-3. **Given** the device has no network connection, **When** the user opens the installed
+3. **Given** the app is installed on Android Chrome, **When** the user launches it from
+   their home screen, **Then** it opens in a standalone window with no browser chrome.
+
+4. **Given** the device has no network connection, **When** the user opens the installed
    app and records a transaction, **Then** the transaction is saved and visible
    immediately without requiring any network access.
 
-4. **Given** the app is offline and the user navigates between screens, **When** they
+5. **Given** the app is offline and the user navigates between screens, **When** they
    access any core feature (transaction list, form, settings), **Then** all screens
    load and function correctly.
 
@@ -282,6 +290,9 @@ are present.
 - What if an account involved in a transfer is deleted? The transfer is reassigned to
   the "General" fallback for the affected side (source or destination), preserving the
   transaction record.
+- What if the user opens the app in Firefox, Safari, Edge, or any non-Chrome browser?
+  An unsupported-browser error page is displayed immediately; no app functionality is
+  rendered.
 - What if IndexedDB data is corrupt or unreadable on app load (e.g., schema mismatch
   after an update, interrupted write, or browser-level corruption)? The app shows a
   clear error screen, blocks all further writes to prevent overwriting salvageable data,
@@ -334,8 +345,12 @@ are present.
   permitted for financial data, and no financial data is ever transmitted over a network.
 - **FR-015**: Application MUST be accessible without any login, registration, or
   authentication step.
-- **FR-016**: Application MUST be installable as a PWA on supported browsers.
-- **FR-017**: All features MUST work fully when the device has no network connection.
+- **FR-016**: On load, the application MUST detect the browser. If the browser is not
+  Chrome (desktop or Android Chrome), the app MUST display an unsupported-browser
+  error page and render no other application functionality.
+- **FR-017**: Application MUST be installable as a PWA on Chrome desktop and Android
+  Chrome specifically.
+- **FR-018**: All features MUST work fully when the device has no network connection.
 - **FR-018**: All interactive UI components MUST comply with WAI-ARIA standards,
   support keyboard navigation, and meet WCAG 2.1 AA contrast requirements.
 - **FR-019**: The transaction list MUST support filtering by any combination of:
@@ -368,8 +383,11 @@ are present.
   (b) Ad-hoc export to the user's Google Drive (CSV), requiring Google OAuth
       authorisation on first use.
   (c) Scheduled automatic export to Google Drive at a user-configured interval
-      (daily, weekly, or monthly); the export triggers when the app is opened and
-      the interval has elapsed.
+      (daily, weekly, or monthly). The primary trigger is app open when the interval
+      has elapsed, showing a non-blocking toast on completion. On Chrome installations
+      that support the Periodic Background Sync API, the app MUST additionally register
+      a background sync task so the export can run without the app being open; on
+      unsupported installations the on-open trigger serves as the sole mechanism.
 - **FR-027**: The CSV export format MUST include all transactions, categories, and
   accounts. The exact schema will be defined at the plan stage.
 - **FR-028**: Settings MUST include a "Restore from backup" action that accepts a
@@ -403,9 +421,9 @@ are present.
   transfer) from opening the form to confirmation in under 60 seconds.
 - **SC-002**: All recorded transactions persist and remain fully accessible after
   closing and reopening the browser or relaunching the installed app.
-- **SC-003**: The app is installable on at least two major platforms (e.g., Android
-  Chrome and desktop Chrome/Edge) and launches in standalone mode from the home
-  screen or desktop.
+- **SC-003**: The app is installable on Android Chrome and desktop Chrome, and launches
+  in standalone mode from the home screen or desktop. Users on any other browser see
+  the unsupported-browser error page.
 - **SC-004**: Every core user action (record income/expense/transfer, view, edit, delete
   transaction; manage categories; manage accounts) completes successfully with no network
   connection.
@@ -424,6 +442,11 @@ are present.
 
 - Single-user application; no data sharing, sync to cloud, or multi-device support
   in this version.
+- Supported browsers: Chrome (desktop) and Android Chrome only. All other browsers
+  are explicitly out of scope and receive an unsupported-browser error page.
+- iOS Safari is not a supported browser; the iOS storage eviction mitigation via the
+  Storage Persistence API is relevant only when a user accesses the app on Chrome for
+  Android, where eviction risk is lower but the API is still requested as a safeguard.
 - A single active currency is used throughout the app at any one time; no multi-currency
   or currency conversion. The user selects their currency in Settings and may change it
   at any time. All amounts are stored as plain decimals; the selected currency symbol and
