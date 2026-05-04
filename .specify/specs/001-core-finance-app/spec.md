@@ -2,46 +2,62 @@
 
 **Feature Branch**: `001-core-finance-app`
 **Created**: 2026-05-04
+**Amended**: 2026-05-04 — added transfer transaction type (three types: income, expense, transfer)
 **Status**: Draft
-**Input**: User description: public, offline-first, PWA-installable personal finance journaling app with income/expense transactions, configurable categories and accounts, no authentication required.
+**Input**: User description: public, offline-first, PWA-installable personal finance journaling app with income/expense/transfer transactions, configurable categories and accounts, no authentication required.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Record a Financial Transaction (Priority: P1)
 
-A user opens the app and fills in the transaction form to log money they spent or received.
-They choose whether it is an expense or income, pick a category and account, enter the
-amount, add a title and optional note, and confirm the date and time. On submission the
-entry is saved to the device and immediately visible.
+A user opens the app and fills in the transaction form to log money they spent, received,
+or moved between accounts. They choose the transaction type — income, expense, or transfer
+— and the form adapts to show the relevant fields. For income and expense, the user picks
+a single account and a category. For a transfer, the user picks a source account and a
+destination account; category is optional. On submission the entry is saved to the device
+and immediately visible.
 
 **Why this priority**: This is the single most fundamental action in the app. Everything
-else depends on transactions existing.
+else depends on transactions existing. Transfer is included at P1 because it is a core
+transaction type, not an add-on.
 
-**Independent Test**: Can be fully tested by submitting the form with valid data and
-confirming the entry appears in the transaction list — no other story needs to be
-complete first.
+**Independent Test**: Can be fully tested by submitting one of each type (income, expense,
+transfer) with valid data and confirming each appears in the transaction list with the
+correct fields displayed — no other story needs to be complete first.
 
 **Acceptance Scenarios**:
 
-1. **Given** the user is on the home screen, **When** they open the transaction form and
-   fill in all required fields (type, title, amount, category, account, date/time) and
-   submit, **Then** the new transaction appears at the top of the transaction list and
-   all field values are preserved exactly as entered.
+1. **Given** the user selects the "expense" or "income" type, **When** they fill in all
+   required fields (title, amount, category, account, date/time) and submit, **Then** the
+   new transaction appears at the top of the transaction list with all values preserved.
 
-2. **Given** a transaction form is open, **When** the user submits without filling a
+2. **Given** the user selects the "transfer" type, **When** they fill in all required
+   fields (title, amount, source account, destination account, date/time) and submit,
+   **Then** the transfer appears in the transaction list showing the source and destination
+   accounts, and category is not required.
+
+3. **Given** the user selects "transfer" and chooses the same account for both source and
+   destination, **When** they attempt to submit, **Then** the form rejects the entry with
+   a clear error stating source and destination accounts must be different.
+
+4. **Given** only one account exists, **When** the user selects the "transfer" type,
+   **Then** the form disables submission and prompts the user to add at least one more
+   account in Settings before a transfer can be recorded.
+
+5. **Given** a transaction form is open, **When** the user submits without filling a
    required field, **Then** the form displays a clear inline error for each missing
    field and the transaction is not saved.
 
-3. **Given** the user enters a non-positive amount (zero or negative), **When** they
+6. **Given** the user enters a non-positive amount (zero or negative), **When** they
    attempt to submit, **Then** the form rejects the input with an error message
    indicating amount must be greater than zero.
 
-4. **Given** no categories exist yet, **When** the user opens the transaction form,
-   **Then** the category field prompts the user to add a category in Settings before
-   a transaction can be recorded.
+7. **Given** no categories exist yet and the user selects "income" or "expense" type,
+   **When** they open the transaction form, **Then** the category field prompts the user
+   to add a category in Settings before the transaction can be recorded.
 
-5. **Given** the device has no network connection, **When** the user submits a
-   transaction, **Then** the entry is saved locally and a connectivity indicator
+8. **Given** the device has no network connection, **When** the user submits any
+   transaction type, **Then** the entry is saved locally and a connectivity indicator
    confirms the data is stored on-device.
 
 ---
@@ -62,8 +78,9 @@ have transactions to act on.
 **Acceptance Scenarios**:
 
 1. **Given** transactions have been recorded, **When** the user views the transaction
-   list, **Then** all entries are displayed in reverse chronological order showing at
-   minimum: title, amount, type (income/expense), category, and date.
+   list, **Then** all entries are displayed in reverse chronological order. Income and
+   expense entries show: title, amount, type, category, account, and date. Transfer
+   entries show: title, amount, source account → destination account, and date.
 
 2. **Given** the transaction list is visible, **When** the user selects an entry,
    **Then** the transaction form opens pre-filled with the existing values and the user
@@ -183,69 +200,87 @@ device is in airplane mode persists after reconnecting.
   Duplicate entries are allowed — deduplication is the user's responsibility.
 - What if the browser's storage quota is exceeded? The app surfaces an error explaining
   that local storage is full and suggests the user export or delete older entries.
-- How does the app behave when categories or accounts lists are empty? The transaction
-  form disables submission and guides the user to Settings to create at least one
-  category and one account before recording.
+- How does the app behave when categories or accounts lists are empty? For income/expense,
+  the transaction form disables submission and guides the user to Settings to create at
+  least one category and one account. For transfers, at least two accounts are required.
+- What if the user edits a transfer and sets both accounts to the same value? The form
+  applies the same same-account validation as on creation and rejects the save.
+- What if an account involved in a transfer is deleted? The transfer is reassigned to
+  the "General" fallback for the affected side (source or destination), preserving the
+  transaction record.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow users to record a transaction with all of the following
-  fields: title (text), amount (positive decimal number), note (optional text),
-  category (selected from configured list), account (selected from configured list),
-  transaction type (income or expense), and date/time.
-- **FR-002**: Date/time field MUST default to the current date and time but MUST be
+- **FR-001**: System MUST support three transaction types: income, expense, and transfer.
+- **FR-002**: For income and expense transactions, the system MUST require: title (text),
+  amount (positive decimal), category (from configured list), account (from configured
+  list), date/time. Note is optional.
+- **FR-003**: For transfer transactions, the system MUST require: title (text), amount
+  (positive decimal), source account, destination account, date/time. Category and note
+  are optional for transfers.
+- **FR-004**: Source account and destination account on a transfer MUST be different;
+  the system MUST reject any transfer where they are the same.
+- **FR-005**: Date/time field MUST default to the current date and time but MUST be
   editable by the user.
-- **FR-003**: System MUST display all recorded transactions in reverse chronological
-  order showing title, amount, type, category, account, and date.
-- **FR-004**: Users MUST be able to edit any field of an existing transaction and save
-  the changes.
-- **FR-005**: Users MUST be able to delete a transaction after an explicit confirmation
+- **FR-006**: System MUST display all recorded transactions in reverse chronological
+  order. Income/expense entries show title, amount, type, category, account, and date.
+  Transfer entries show title, amount, source account, destination account, and date.
+- **FR-007**: Users MUST be able to edit any field of an existing transaction and save
+  the changes. Editing a transfer MUST re-apply the same-account validation.
+- **FR-008**: Users MUST be able to delete a transaction after an explicit confirmation
   step.
-- **FR-006**: System MUST provide a Settings section where users can manage categories
+- **FR-009**: System MUST provide a Settings section where users can manage categories
   and accounts independently.
-- **FR-007**: Categories MUST have a name and a type: expense, income, or both.
-- **FR-008**: Accounts MUST have at minimum a name.
-- **FR-009**: Deleting a category MUST reassign all affected transactions to an
-  "Uncategorized" system fallback; the fallback MUST NOT be deletable.
-- **FR-010**: Deleting an account MUST reassign all affected transactions to a "General"
-  system fallback account; the fallback MUST NOT be deletable.
-- **FR-011**: All data MUST be stored entirely within the user's browser; no financial
+- **FR-010**: Categories MUST have a name and a type: expense, income, or both.
+  Categories are not applicable to transfer transactions.
+- **FR-011**: Accounts MUST have at minimum a name.
+- **FR-012**: Deleting a category MUST reassign all affected income/expense transactions
+  to an "Uncategorized" system fallback; the fallback MUST NOT be deletable.
+- **FR-013**: Deleting an account MUST reassign all affected transactions — including
+  transfers where it appeared as source or destination — to the "General" system fallback;
+  the fallback MUST NOT be deletable.
+- **FR-014**: All data MUST be stored entirely within the user's browser; no financial
   data is ever transmitted over a network.
-- **FR-012**: Application MUST be accessible without any login, registration, or
+- **FR-015**: Application MUST be accessible without any login, registration, or
   authentication step.
-- **FR-013**: Application MUST be installable as a PWA on supported browsers.
-- **FR-014**: All features MUST work fully when the device has no network connection.
-- **FR-015**: All interactive UI components MUST comply with WAI-ARIA standards,
+- **FR-016**: Application MUST be installable as a PWA on supported browsers.
+- **FR-017**: All features MUST work fully when the device has no network connection.
+- **FR-018**: All interactive UI components MUST comply with WAI-ARIA standards,
   support keyboard navigation, and meet WCAG 2.1 AA contrast requirements.
 
 ### Key Entities
 
 - **Transaction**: Represents a single financial entry. Has a unique identifier, title,
-  positive decimal amount, optional note, transaction type (income or expense),
-  reference to a category, reference to an account, and an exact date and time.
-- **Category**: A named grouping label for transactions. Has a unique identifier, a
-  user-defined name, and a type (expense, income, or both). Two system categories
-  exist by default and cannot be deleted: "Uncategorized" (expense/both) and
-  "General Income" (income/both).
+  positive decimal amount, optional note, transaction type (income, expense, or transfer),
+  and an exact date and time.
+  - Income/expense transactions additionally reference one category and one account.
+  - Transfer transactions additionally reference a source account and a distinct
+    destination account; category is optional.
+- **Category**: A named grouping label for income and expense transactions. Has a unique
+  identifier, a user-defined name, and a type (expense, income, or both). Two system
+  categories exist by default and cannot be deleted: "Uncategorized" (expense/both) and
+  "General Income" (income/both). Categories do not apply to transfers.
 - **Account**: A named financial account or wallet the user tracks. Has a unique
-  identifier and a user-defined name. One system account exists by default and cannot
-  be deleted: "General".
+  identifier and a user-defined name. Referenced by income/expense transactions (single
+  account) and by transfer transactions (as source and destination). One system account
+  exists by default and cannot be deleted: "General".
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: A user can record a complete financial transaction from opening the form
-  to confirmation in under 60 seconds.
+- **SC-001**: A user can record a complete transaction of any type (income, expense, or
+  transfer) from opening the form to confirmation in under 60 seconds.
 - **SC-002**: All recorded transactions persist and remain fully accessible after
   closing and reopening the browser or relaunching the installed app.
 - **SC-003**: The app is installable on at least two major platforms (e.g., Android
   Chrome and desktop Chrome/Edge) and launches in standalone mode from the home
   screen or desktop.
-- **SC-004**: Every core user action (record, view, edit, delete transaction; manage
-  categories; manage accounts) completes successfully with no network connection.
+- **SC-004**: Every core user action (record income/expense/transfer, view, edit, delete
+  transaction; manage categories; manage accounts) completes successfully with no network
+  connection.
 - **SC-005**: Zero bytes of user financial data leave the device during normal
   operation.
 - **SC-006**: Settings changes (adding, renaming, or deleting a category or account)
@@ -259,7 +294,10 @@ device is in airplane mode persists after reconnecting.
   in this version.
 - A single currency is used throughout; no multi-currency or currency conversion.
 - "Account" in this version is a named label only (e.g., "Cash", "Savings"); there
-  is no balance tracking, opening balance, or reconciliation feature.
+  is no balance tracking, opening balance, or reconciliation feature. Transfers move
+  money between labels only — no running balance is computed.
+- Transfer transactions are treated as neutral entries (neither income nor expense) and
+  are excluded from income/expense category reporting.
 - The app ships with a small set of default categories (e.g., "Food", "Transport",
   "Salary", "Freelance") and one default account ("General") to ensure the transaction
   form is usable immediately after install.
