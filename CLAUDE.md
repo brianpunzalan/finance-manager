@@ -40,3 +40,15 @@ All skills live in `.claude/skills/speckit-*/SKILL.md`.
 - Always read the active `plan.md` for the current spec before writing code — the `<!-- SPECKIT START/END -->` block in CLAUDE.md points there.
 - The constitution (`.specify/memory/constitution.md`) supersedes all other practices once filled in. Check it before making architectural decisions.
 - Specs live under `.specify/specs/` using sequential numbering (`001-`, `002-`, …).
+
+<!-- SPECKIT START -->
+Active feature: **001-core-finance-app**
+Read the implementation plan before writing any code:
+`.specify/specs/001-core-finance-app/plan.md`
+
+Key artifacts:
+- Spec: `.specify/specs/001-core-finance-app/spec.md`
+- Data model: `.specify/specs/001-core-finance-app/data-model.md`
+- CSV schema: `.specify/specs/001-core-finance-app/contracts/csv-schema.md`
+- Quickstart: `.specify/specs/001-core-finance-app/quickstart.md`
+<!-- SPECKIT END -->
