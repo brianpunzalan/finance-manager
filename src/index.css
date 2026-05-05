@@ -16,6 +16,10 @@
   --color-border: #e2e8f0;
   --color-input: #e2e8f0;
   --color-ring: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
   --color-income: #16a34a;
   --color-expense: #dc2626;
   --color-transfer: #2563eb;

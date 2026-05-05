@@ -5,7 +5,7 @@ const SYSTEM_IDS = new Set(['__uncategorized__', '__general_income__'])
 
 export const CategoryService = {
   async getAll(): Promise<Category[]> {
-    return db.categories.where('isDeleted').equals(0).toArray()
+    return db.categories.filter((c) => !c.isDeleted).toArray()
   },
 
   async add(data: { name: string; type: 'income' | 'expense'; parentId?: string }): Promise<void> {

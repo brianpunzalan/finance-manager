@@ -5,11 +5,11 @@ const SYSTEM_IDS = new Set(['__general__'])
 
 export const AccountService = {
   async getAll(): Promise<Account[]> {
-    return db.accounts.where('isDeleted').equals(0).toArray()
+    return db.accounts.filter((a) => !a.isDeleted).toArray()
   },
 
   async getGroups(): Promise<AccountGroup[]> {
-    return db.accountGroups.where('isDeleted').equals(0).toArray()
+    return db.accountGroups.filter((g) => !g.isDeleted).toArray()
   },
 
   async add(data: { name: string; groupId?: string; currencyId: string }): Promise<void> {

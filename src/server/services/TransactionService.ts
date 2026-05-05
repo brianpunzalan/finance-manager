@@ -38,7 +38,7 @@ export const TransactionService = {
   },
 
   async getAll(filters?: TransactionFilters): Promise<Transaction[]> {
-    let collection = db.transactions.where('isDeleted').equals(0)
+    let collection = db.transactions.filter((t) => !t.isDeleted)
 
     const results = await collection.toArray()
 
