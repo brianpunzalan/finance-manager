@@ -7,6 +7,8 @@ import { runSeedIfNeeded } from './server/db/migrations'
 import { useUiStore } from './store/uiStore'
 import { useCurrencyStore } from './store/currencyStore'
 import { useSettingsStore } from './store/settingsStore'
+import { useCategoryStore } from './store/categoryStore'
+import { useAccountStore } from './store/accountStore'
 import { requestStoragePersistence } from './server/pwa/StoragePersistence'
 import { initInstallPrompt } from './server/pwa/InstallPrompt'
 import { BackupScheduler } from './server/backup/BackupScheduler'
@@ -25,6 +27,8 @@ async function boot() {
     await Promise.all([
       useCurrencyStore.getState().load(),
       useSettingsStore.getState().load(),
+      useCategoryStore.getState().load(),
+      useAccountStore.getState().load(),
     ])
   } catch (err) {
     useUiStore.getState().setDbError(
