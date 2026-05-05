@@ -1,17 +1,22 @@
+import { useShallow } from 'zustand/react/shallow'
 import { useCategoryStore } from '@/store/categoryStore'
 import type { Category } from '@/shared/types'
 
 export function useCategories() {
-  const categories = useCategoryStore((s) => s.categories)
-  const isLoaded = useCategoryStore((s) => s.isLoaded)
-  const load = useCategoryStore((s) => s.load)
-  const addCategory = useCategoryStore((s) => s.addCategory)
-  const renameCategory = useCategoryStore((s) => s.renameCategory)
-  const deleteCategory = useCategoryStore((s) => s.deleteCategory)
+  const state = useCategoryStore(
+    useShallow((s) => ({
+      categories: s.categories,
+      isLoaded: s.isLoaded,
+      load: s.load,
+      addCategory: s.addCategory,
+      renameCategory: s.renameCategory,
+      deleteCategory: s.deleteCategory,
+    }))
+  )
 
   function byType(type: 'income' | 'expense'): Category[] {
-    return categories.filter((c) => c.type === type && !c.isDeleted)
+    return state.categories.filter((c) => c.type === type && !c.isDeleted)
   }
 
-  return { categories, isLoaded, load, addCategory, renameCategory, deleteCategory, byType }
+  return { ...state, byType }
 }

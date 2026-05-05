@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow'
 import { useCurrencyStore } from '@/store/currencyStore'
 import { useUiStore } from '@/store/uiStore'
 import { Label } from '@/client/components/ui/label'
@@ -10,7 +11,9 @@ import {
 } from '@/client/components/ui/select'
 
 export function CurrencySettings() {
-  const { currencies, defaultCurrency, setDefault } = useCurrencyStore()
+  const { currencies, defaultCurrency, setDefault } = useCurrencyStore(
+    useShallow((s) => ({ currencies: s.currencies, defaultCurrency: s.defaultCurrency, setDefault: s.setDefault }))
+  )
   const addToast = useUiStore((s) => s.addToast)
 
   async function handleChange(id: string) {
