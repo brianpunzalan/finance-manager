@@ -1,14 +1,15 @@
-import { useUiStore } from '@/store/uiStore'
-import type { ToastItem } from '@/shared/types'
+import { useUiStore } from "@/store/uiStore";
+import type { ToastItem } from "@/shared/types";
+import { useShallow } from "zustand/shallow";
 
 export function useToast() {
-  const toasts = useUiStore((s) => s.toasts)
-  const addToast = useUiStore((s) => s.addToast)
-  const removeToast = useUiStore((s) => s.removeToast)
+  const toasts = useUiStore(useShallow((s) => s.toasts));
+  const addToast = useUiStore(useShallow((s) => s.addToast));
+  const removeToast = useUiStore(useShallow((s) => s.removeToast));
 
-  function toast(opts: Omit<ToastItem, 'id'>) {
-    addToast(opts)
+  function toast(opts: Omit<ToastItem, "id">) {
+    addToast(opts);
   }
 
-  return { toasts, toast, removeToast }
+  return { toasts, toast, removeToast };
 }
